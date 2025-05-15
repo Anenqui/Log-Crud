@@ -22,7 +22,9 @@ try{
 
     const userSaved = await newUser.save();
     const token = await createAccessToken({ id: userSaved._id });
-    res.cookie('token', token);
+    res.cookie("token", token, {
+  httpOnly: true,
+  });
     res.json({
         message: "Usuario creado",
         id: userSaved._id,
@@ -63,23 +65,6 @@ try{
 }
 }
 
-export const verifyToken = async (req, res) => {
-  const { token } = req.cookies;
-  if (!token) return res.send(false);
-
-  jwt.verify(token, TOKEN_SECRET, async (error, user) => {
-    if (error) return res.sendStatus(401);
-
-    const userFound = await User.findById(user.id);
-    if (!userFound) return res.sendStatus(401);
-
-    return res.json({
-      id: userFound._id,
-      username: userFound.username,
-      email: userFound.email,
-    });
-  });
-};
 
 export const logout = async (req, res) => {
   res.cookie("token", "", {
@@ -99,4 +84,22 @@ export const profile = async (req,res)=>{
       createdAt:userFound.createdAt,
       updatedAt: userFound.updatedAt,
     })
+};
+
+export const verifyToken = async (req, res) => {
+  const { token } = req.cookies;
+  if (!token) return res.status(401).json({message:"Unauthorized"});
+
+  jwt.verify(token, TOKEN_SECRET, async (error, user) => {
+    if (error) return res.sendStatus(401).json({message:"Unauthorized"});
+
+    const userFound = await User.findById(user.id);
+    if (!userFound) return res.sendStatus(401).json({message:"Unauthorized"});
+
+    return res.json({
+      id: userFound._id,
+      username: userFound.username,
+      email: userFound.email,
+    });
+  });
 };
